@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CategorySelect, INCOME_SOURCES } from "@/components/CategorySelect";
 
 type Income = {
   id: string;
@@ -230,17 +231,14 @@ export default function Income() {
               <DialogTitle>{editingId ? "Edit Income" : "Add New Income"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>
-                  Source <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  placeholder="e.g., Salary, Freelance, Investments"
-                  required
-                />
-              </div>
+              <CategorySelect
+                value={formData.source}
+                onValueChange={(value) => setFormData({ ...formData, source: value })}
+                categories={INCOME_SOURCES}
+                label="Source"
+                placeholder="Select income source"
+                required
+              />
               <div className="space-y-2">
                 <Label>
                   Amount (₹) <span className="text-destructive">*</span>
