@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,13 +13,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CategorySelect, EXPENSE_CATEGORIES } from "@/components/CategorySelect";
 
 const expenseSchema = z.object({
   category: z.string()
     .trim()
     .min(1, 'Category required')
-    .max(50, 'Category too long')
-    .regex(/^[a-zA-Z0-9\s&\-]+$/, 'Invalid characters in category'),
+    .max(50, 'Category too long'),
   amount: z.number()
     .int('Amount must be a whole number')
     .min(1, 'Amount must be positive')
@@ -158,10 +158,14 @@ export default function Expenses() {
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Edit Expense" : "Add Expense"}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Category <span className="text-destructive">*</span></Label>
-                <Input value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required />
-              </div>
+              <CategorySelect
+                value={formData.category}
+                onValueChange={(value) => setFormData({...formData, category: value})}
+                categories={EXPENSE_CATEGORIES}
+                label="Category"
+                placeholder="Select a category"
+                required
+              />
               <div className="space-y-2">
                 <Label>Amount (₹) <span className="text-destructive">*</span></Label>
                 <Input 

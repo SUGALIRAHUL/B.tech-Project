@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CategorySelect, BUDGET_CATEGORIES } from "@/components/CategorySelect";
 
 type Budget = {
   id: string;
@@ -27,8 +28,7 @@ const budgetSchema = z.object({
   category: z.string()
     .trim()
     .min(1, 'Category required')
-    .max(50, 'Category too long')
-    .regex(/^[a-zA-Z0-9\s&\-]+$/, 'Invalid characters in category'),
+    .max(50, 'Category too long'),
   amount: z.number()
     .int('Amount must be a whole number')
     .min(1, 'Amount must be positive')
@@ -208,17 +208,14 @@ export default function Budget() {
               <DialogTitle>{editingId ? "Edit Budget" : "Add New Budget"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>
-                  Category <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Groceries, Rent, Entertainment"
-                  required
-                />
-              </div>
+              <CategorySelect
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                categories={BUDGET_CATEGORIES}
+                label="Category"
+                placeholder="Select a category"
+                required
+              />
               <div className="space-y-2">
                 <Label>
                   Amount (₹) <span className="text-destructive">*</span>

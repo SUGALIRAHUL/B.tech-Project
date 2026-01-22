@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CategorySelect, GOAL_TYPES } from "@/components/CategorySelect";
 
 const createGoalSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -24,6 +25,7 @@ export default function Goals() {
   const [goals, setGoals] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [goalName, setGoalName] = useState("");
   const { toast } = useToast();
   
   const form = useForm({
@@ -44,19 +46,38 @@ export default function Goals() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const payload = { name: values.name, target_amount: values.target_amount, current_amount: values.current_amount, deadline: values.deadline || null };
+    if (!goalName.trim()) {
+      toast({ variant: "destructive", title: "Error", description: "Goal name is required" });
+      return;
+    }
+
+    const payload = { name: goalName, target_amount: values.target_amount, current_amount: values.current_amount, deadline: values.deadline || null };
     
     if (editingId) {
       const { error } = await supabase.from("savings_goals").update(payload).eq("id", editingId);
-      if (!error) { toast({ title: "Goal updated" }); setOpen(false); setEditingId(null); form.reset(); fetchGoals(); }
+      if (!error) { 
+        toast({ title: "Goal updated" }); 
+        setOpen(false); 
+        setEditingId(null); 
+        form.reset(); 
+        setGoalName("");
+        fetchGoals(); 
+      }
     } else {
       const { error } = await supabase.from("savings_goals").insert({ ...payload, user_id: user.id });
-      if (!error) { toast({ title: "Goal created" }); setOpen(false); form.reset(); fetchGoals(); }
+      if (!error) { 
+        toast({ title: "Goal created" }); 
+        setOpen(false); 
+        form.reset(); 
+        setGoalName("");
+        fetchGoals(); 
+      }
     }
   };
 
   const handleEdit = (goal: any) => {
     setEditingId(goal.id);
+    setGoalName(goal.name);
     form.reset({ name: goal.name, target_amount: Math.round(goal.target_amount), current_amount: Math.round(goal.current_amount), deadline: goal.deadline || "" });
     setOpen(true);
   };
@@ -71,15 +92,27 @@ export default function Goals() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Savings Goals</h1>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditingId(null); form.reset(); } }}>
+        <Dialog open={open} onOpenChange={(o) => { 
+          setOpen(o); 
+          if (!o) { 
+            setEditingId(null); 
+            form.reset(); 
+            setGoalName("");
+          } 
+        }}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" />Add Goal</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{editingId ? "Edit Goal" : "Create Goal"}</DialogTitle></DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Goal Name <span className="text-destructive">*</span></FormLabel><FormControl><Input placeholder="e.g., Emergency Fund" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+                <CategorySelect
+                  value={goalName}
+                  onValueChange={setGoalName}
+                  categories={GOAL_TYPES}
+                  label="Goal Name"
+                  placeholder="Select a goal type"
+                  required
+                />
                 <FormField control={form.control} name="target_amount" render={({ field }) => (
                   <FormItem><FormLabel>Target Amount (₹) <span className="text-destructive">*</span></FormLabel><FormControl><Input type="number" step="1" min="1" {...field} onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))} /></FormControl><FormMessage /></FormItem>
                 )} />

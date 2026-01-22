@@ -766,11 +766,22 @@ export default function Auth() {
                         <Input
                           id="signup-mobile"
                           type="tel"
+                          inputMode="numeric"
                           placeholder="1234567890"
                           value={phoneNumber}
                           onChange={(e) => {
-                            const digits = e.target.value.replace(/\D/g, '');
+                            const digits = e.target.value.replace(/[^0-9]/g, '');
                             setPhoneNumber(digits);
+                          }}
+                          onKeyDown={(e) => {
+                            // Allow: backspace, delete, tab, escape, enter, arrows
+                            if ([8, 9, 27, 13, 46, 37, 39].includes(e.keyCode)) return;
+                            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                            if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
+                            // Block non-numeric keys
+                            if (!/[0-9]/.test(e.key)) {
+                              e.preventDefault();
+                            }
                           }}
                           required
                         />
