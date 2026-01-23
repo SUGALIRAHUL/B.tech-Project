@@ -409,6 +409,7 @@ export default function Settings() {
                           <Input 
                             placeholder="1234567890"
                             inputMode="numeric"
+                            type="tel"
                             value={field.value?.replace(/^\+\d+/, '') || ''}
                             onChange={(e) => {
                               const currentValue = field.value || "+1";
@@ -416,11 +417,6 @@ export default function Settings() {
                               const countryCode = match ? match[0] : "+1";
                               const digits = e.target.value.replace(/[^0-9]/g, '');
                               field.onChange(countryCode + digits);
-                            }}
-                            onKeyDown={(e) => {
-                              if ([8, 9, 27, 13, 46, 37, 39].includes(e.keyCode)) return;
-                              if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
-                              if (!/[0-9]/.test(e.key)) e.preventDefault();
                             }}
                           />
                         </FormControl>
