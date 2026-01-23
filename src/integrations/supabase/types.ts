@@ -309,6 +309,33 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_rate_limits: {
+        Row: {
+          action: string
+          attempts: number
+          email: string
+          first_attempt_at: string
+          id: string
+          last_attempt_at: string
+        }
+        Insert: {
+          action: string
+          attempts?: number
+          email: string
+          first_attempt_at?: string
+          id?: string
+          last_attempt_at?: string
+        }
+        Update: {
+          action?: string
+          attempts?: number
+          email?: string
+          first_attempt_at?: string
+          id?: string
+          last_attempt_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -452,6 +479,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

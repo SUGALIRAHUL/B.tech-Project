@@ -190,11 +190,11 @@ export default function Auth() {
   };
 
   const handleLoginOtpVerify = async () => {
-    if (otp.length !== 6) {
+    if (otp.length !== 8) {
       toast({
         variant: "destructive",
         title: "Invalid Code",
-        description: "Please enter the complete 6-digit code.",
+        description: "Please enter the complete 8-character code.",
       });
       return;
     }
@@ -273,11 +273,11 @@ export default function Auth() {
   };
 
   const handleVerifySignupOtp = async () => {
-    if (signupOtp.length !== 6) {
+    if (signupOtp.length !== 8) {
       toast({
         variant: "destructive",
         title: "Invalid Code",
-        description: "Please enter the complete 6-digit code.",
+        description: "Please enter the complete 8-character code.",
       });
       return;
     }
@@ -299,7 +299,7 @@ export default function Auth() {
     // Now complete the signup
     const mobileNumber = `${countryCode}${phoneNumber}`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: signupData.email,
       password: signupData.password,
       options: {
@@ -324,16 +324,32 @@ export default function Auth() {
         title: "Account creation failed",
         description: error.message || "Unable to create account. Please try again.",
       });
-    } else {
-      toast({
-        title: "Account created!",
-        description: "Welcome to PERSFIN. You can now log in.",
-      });
-      setSignupStep('email-verify');
-      setEmail("");
-      setPassword("");
-      setSignupOtp("");
+      setLoading(false);
+      return;
     }
+
+    // After successful signup, mark email as confirmed via edge function
+    try {
+      const { error: confirmError } = await supabase.functions.invoke('confirm-email', {
+        body: { email: signupData.email }
+      });
+      
+      if (confirmError) {
+        console.error('Error confirming email:', confirmError);
+        // Don't fail the signup, just log the error
+      }
+    } catch (confirmErr) {
+      console.error('Error calling confirm-email:', confirmErr);
+    }
+
+    toast({
+      title: "Account created!",
+      description: "Welcome to PERSFIN. You can now log in.",
+    });
+    setSignupStep('email-verify');
+    setEmail("");
+    setPassword("");
+    setSignupOtp("");
 
     setLoading(false);
   };
@@ -610,12 +626,12 @@ export default function Auth() {
                     </div>
                     <h3 className="text-xl font-semibold">Enter Verification Code</h3>
                     <p className="text-muted-foreground text-sm">
-                      We sent a 6-digit code to <strong>{email}</strong>
+                      We sent an 8-character code to <strong>{email}</strong>
                     </p>
                   </div>
                   
                   <div className="flex justify-center">
-                    <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTP maxLength={8} value={otp} onChange={setOtp}>
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
                         <InputOTPSlot index={1} />
@@ -623,6 +639,8 @@ export default function Auth() {
                         <InputOTPSlot index={3} />
                         <InputOTPSlot index={4} />
                         <InputOTPSlot index={5} />
+                        <InputOTPSlot index={6} />
+                        <InputOTPSlot index={7} />
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
@@ -630,7 +648,7 @@ export default function Auth() {
                   <Button 
                     onClick={handleLoginOtpVerify} 
                     className="w-full" 
-                    disabled={loading || otp.length !== 6}
+                    disabled={loading || otp.length !== 8}
                   >
                     {loading ? (
                       <>
@@ -880,12 +898,12 @@ export default function Auth() {
                     </div>
                     <h3 className="text-xl font-semibold">Step 3: Verify Email Code</h3>
                     <p className="text-muted-foreground text-sm">
-                      Enter the 6-digit code sent to <strong>{email}</strong>
+                      Enter the 8-character code sent to <strong>{email}</strong>
                     </p>
                   </div>
                   
                   <div className="flex justify-center">
-                    <InputOTP maxLength={6} value={signupOtp} onChange={setSignupOtp}>
+                    <InputOTP maxLength={8} value={signupOtp} onChange={setSignupOtp}>
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
                         <InputOTPSlot index={1} />
@@ -893,6 +911,8 @@ export default function Auth() {
                         <InputOTPSlot index={3} />
                         <InputOTPSlot index={4} />
                         <InputOTPSlot index={5} />
+                        <InputOTPSlot index={6} />
+                        <InputOTPSlot index={7} />
                       </InputOTPGroup>
                     </InputOTP>
                   </div>
@@ -900,7 +920,7 @@ export default function Auth() {
                   <Button 
                     onClick={handleVerifySignupOtp} 
                     className="w-full" 
-                    disabled={loading || signupOtp.length !== 6}
+                    disabled={loading || signupOtp.length !== 8}
                   >
                     {loading ? (
                       <>
