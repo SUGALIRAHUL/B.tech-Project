@@ -1,6 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const citiesByCountry: Record<string, string[]> = {
   "India": ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal", "Visakhapatnam", "Patna", "Vadodara", "Ghaziabad", "Ludhiana", "Agra", "Nashik", "Faridabad", "Meerut", "Rajkot", "Varanasi", "Srinagar", "Aurangabad", "Dhanbad", "Amritsar", "Navi Mumbai", "Allahabad", "Ranchi", "Howrah", "Coimbatore", "Jabalpur", "Gwalior", "Vijayawada", "Jodhpur", "Madurai", "Raipur", "Kota", "Chandigarh", "Guwahati", "Solapur", "Hubli", "Tiruchirappalli", "Bareilly", "Moradabad", "Mysore"],
@@ -23,9 +23,29 @@ interface CitySelectorProps {
 }
 
 export function CitySelector({ value, onValueChange, country, disabled }: CitySelectorProps) {
+  const [isCustom, setIsCustom] = useState(false);
   const [customCity, setCustomCity] = useState("");
   const cities = citiesByCountry[country] || [];
   const showCustomInput = cities.length === 0;
+
+  // Check if current value is a custom city (not in the list)
+  useEffect(() => {
+    if (value && cities.length > 0 && !cities.includes(value) && value !== "other") {
+      setIsCustom(true);
+      setCustomCity(value);
+    } else if (value === "other" || !value) {
+      // Reset custom city when switching to "other" selection
+    } else {
+      setIsCustom(false);
+      setCustomCity("");
+    }
+  }, [value, cities]);
+
+  // Reset when country changes
+  useEffect(() => {
+    setIsCustom(false);
+    setCustomCity("");
+  }, [country]);
 
   if (showCustomInput) {
     return (
@@ -38,8 +58,56 @@ export function CitySelector({ value, onValueChange, country, disabled }: CitySe
     );
   }
 
+  const handleSelectChange = (selectedValue: string) => {
+    if (selectedValue === "other") {
+      setIsCustom(true);
+      setCustomCity("");
+      onValueChange("");
+    } else {
+      setIsCustom(false);
+      setCustomCity("");
+      onValueChange(selectedValue);
+    }
+  };
+
+  const handleCustomCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setCustomCity(newValue);
+    onValueChange(newValue);
+  };
+
+  if (isCustom) {
+    return (
+      <div className="space-y-2">
+        <Input
+          value={customCity}
+          onChange={handleCustomCityChange}
+          placeholder="Enter your city name"
+          disabled={disabled}
+          autoFocus
+        />
+        <button
+          type="button"
+          onClick={() => {
+            setIsCustom(false);
+            setCustomCity("");
+            onValueChange("");
+          }}
+          className="text-sm text-primary hover:underline"
+          disabled={disabled}
+        >
+          ← Back to city list
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+    <Select 
+      value={cities.includes(value) ? value : ""} 
+      onValueChange={handleSelectChange} 
+      disabled={disabled}
+    >
       <SelectTrigger className="w-full">
         <SelectValue placeholder="Select city" />
       </SelectTrigger>
@@ -49,7 +117,7 @@ export function CitySelector({ value, onValueChange, country, disabled }: CitySe
             {city}
           </SelectItem>
         ))}
-        <SelectItem value="other">Other (type below)</SelectItem>
+        <SelectItem value="other">Other (enter custom city)</SelectItem>
       </SelectContent>
     </Select>
   );
