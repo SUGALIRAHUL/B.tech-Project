@@ -205,6 +205,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY is not configured");
+      throw new Error("Email service not configured");
+    }
+    
+    console.log(`Sending OTP email to ${email} using Resend API`);
+    
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -253,9 +260,17 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResult = await emailResponse.json();
-    console.log("Email sent:", emailResult);
+    console.log("Email API response:", JSON.stringify(emailResult));
 
     if (!emailResponse.ok) {
+      console.error("Resend API error:", emailResponse.status, emailResult);
+      // Check for common Resend errors
+      if (emailResult.name === "validation_error") {
+        throw new Error("Email validation failed. Please use a valid email address.");
+      }
+      if (emailResult.message?.includes("You can only send testing emails to your own email address")) {
+        throw new Error("Email service is in testing mode. Please contact support or verify the domain.");
+      }
       throw new Error(emailResult.message || "Failed to send email");
     }
 
