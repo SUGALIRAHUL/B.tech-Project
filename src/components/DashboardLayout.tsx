@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "@/hooks/use-toast";
-import logo from "@/assets/finance-tutor-logo.png";
+import logo from "@/assets/persfin-logo.jpeg";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -78,9 +78,9 @@ export default function DashboardLayout() {
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <div className="flex flex-col h-full bg-card border-r">
       <div className="p-4 border-b flex items-center gap-3">
-        <img src={logo} alt="Finance Tutor" className="h-10 w-auto" />
+        <img src={logo} alt="PERSFIN" className="h-10 w-auto" />
         <span className="font-bold text-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Finance Tutor
+          PERSFIN
         </span>
       </div>
       <nav className="flex-1 p-4 space-y-2">
@@ -136,7 +136,7 @@ export default function DashboardLayout() {
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <span className="font-bold">Finance Tutor</span>
+          <span className="font-bold">PERSFIN</span>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-8">
           <Outlet />
