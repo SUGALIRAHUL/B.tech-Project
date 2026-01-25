@@ -264,13 +264,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!emailResponse.ok) {
       console.error("Resend API error:", emailResponse.status, emailResult);
-      // Check for common Resend errors
+      
+      // Check for Resend testing mode error - this is the most common issue
+      if (emailResult.message?.includes("You can only send testing emails to your own email address") ||
+          (emailResult.name === "validation_error" && emailResult.statusCode === 403)) {
+        throw new Error("Email service is in testing mode. Signup is currently limited. Please verify your domain at resend.com/domains to enable full email functionality.");
+      }
+      
+      // Check for other validation errors
       if (emailResult.name === "validation_error") {
-        throw new Error("Email validation failed. Please use a valid email address.");
+        throw new Error(emailResult.message || "Email validation failed");
       }
-      if (emailResult.message?.includes("You can only send testing emails to your own email address")) {
-        throw new Error("Email service is in testing mode. Please contact support or verify the domain.");
-      }
+      
       throw new Error(emailResult.message || "Failed to send email");
     }
 
