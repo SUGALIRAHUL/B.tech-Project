@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Wallet, TrendingUp, Target, BarChart3 } from "lucide-react";
 import { RadialProgress } from "@/components/RadialProgress";
 import { toast } from "@/hooks/use-toast";
+import { SurplusRecommendations } from "@/components/SurplusRecommendations";
 
 interface Stats {
   totalBudget: number;
@@ -201,6 +202,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Smart Financial Recommendations Section */}
+      <SurplusRecommendations />
     </div>
   );
 }

@@ -384,46 +384,47 @@ export default function Settings() {
                 <FormField
                   control={form.control}
                   name="mobile_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Mobile Number</FormLabel>
-                      <div className="flex gap-2">
-                        <CountryCodeSelector
-                          value={field.value || ""}
-                          onSelect={(code) => {
-                            const currentValue = field.value || "";
-                            let numberPart = currentValue;
-                            
-                            if (currentValue.startsWith("+")) {
-                              const match = currentValue.match(/^\+\d+/);
-                              if (match) {
-                                numberPart = currentValue.substring(match[0].length);
-                              }
-                            }
-                            
-                            field.onChange(code + numberPart);
-                          }}
-                          disabled={form.formState.isSubmitting}
-                        />
-                        <FormControl>
-                          <Input 
-                            placeholder="1234567890"
-                            inputMode="numeric"
-                            type="tel"
-                            value={field.value?.replace(/^\+\d+/, '') || ''}
-                            onChange={(e) => {
-                              const currentValue = field.value || "+1";
-                              const match = currentValue.match(/^\+\d+/);
-                              const countryCode = match ? match[0] : "+1";
-                              const digits = e.target.value.replace(/[^0-9]/g, '');
-                              field.onChange(countryCode + digits);
+                  render={({ field }) => {
+                    // Extract country code and number part from current value
+                    const extractParts = (value: string | undefined) => {
+                      if (!value) return { countryCode: "+1", numberPart: "" };
+                      const match = value.match(/^(\+\d{1,4})(.*)$/);
+                      if (match) {
+                        return { countryCode: match[1], numberPart: match[2] || "" };
+                      }
+                      return { countryCode: "+1", numberPart: value };
+                    };
+                    
+                    const { countryCode, numberPart } = extractParts(field.value);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Mobile Number</FormLabel>
+                        <div className="flex gap-2">
+                          <CountryCodeSelector
+                            value={field.value || "+1"}
+                            onSelect={(code) => {
+                              field.onChange(code + numberPart);
                             }}
+                            disabled={form.formState.isSubmitting}
                           />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                          <FormControl>
+                            <Input 
+                              placeholder="1234567890"
+                              inputMode="numeric"
+                              type="tel"
+                              value={numberPart}
+                              onChange={(e) => {
+                                const digits = e.target.value.replace(/[^0-9]/g, '');
+                                field.onChange(countryCode + digits);
+                              }}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 <FormField
                   control={form.control}
