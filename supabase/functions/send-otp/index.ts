@@ -7,6 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Demo mode flag - set to true to show OTP on screen instead of requiring email delivery
+const DEMO_MODE = true;
+
 interface SendOtpRequest {
   email: string;
   type: "login" | "signup";
@@ -192,6 +195,24 @@ const handler = async (req: Request): Promise<Response> => {
     if (insertError) {
       console.error("Error storing OTP:", insertError);
       throw new Error("Failed to generate OTP");
+    }
+
+    // Demo mode: return OTP directly without sending email
+    if (DEMO_MODE) {
+      console.log(`[DEMO MODE] OTP for ${email}: ${otpCode}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "OTP generated (Demo Mode)",
+          demoMode: true,
+          otp: otpCode, // Only returned in demo mode!
+          remaining: rateLimit.remaining 
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     // Send OTP email using Resend API
