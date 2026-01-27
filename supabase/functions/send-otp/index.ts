@@ -268,15 +268,43 @@ const handler = async (req: Request): Promise<Response> => {
       // Check for Resend testing mode error - this is the most common issue
       if (emailResult.message?.includes("You can only send testing emails to your own email address") ||
           (emailResult.name === "validation_error" && emailResult.statusCode === 403)) {
-        throw new Error("Email service is in testing mode. Signup is currently limited. Please verify your domain at resend.com/domains to enable full email functionality.");
+        return new Response(
+          JSON.stringify({
+            code: "EMAIL_TESTING_MODE",
+            error:
+              "Email service is in testing mode. You can only send emails to the Resend account owner's address until you verify a domain and update the sender address.",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
       }
       
       // Check for other validation errors
       if (emailResult.name === "validation_error") {
-        throw new Error(emailResult.message || "Email validation failed");
+        return new Response(
+          JSON.stringify({
+            code: "EMAIL_VALIDATION_FAILED",
+            error: emailResult.message || "Email validation failed",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
       }
       
-      throw new Error(emailResult.message || "Failed to send email");
+      return new Response(
+        JSON.stringify({
+          code: "EMAIL_SEND_FAILED",
+          error: emailResult.message || "Failed to send email",
+        }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     return new Response(

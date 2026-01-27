@@ -94,6 +94,31 @@ export default function Auth() {
   const [signupOtp, setSignupOtp] = useState("");
   const [signupData, setSignupData] = useState<any>(null);
 
+  const extractFunctionErrorMessage = async (err: any): Promise<string> => {
+    // supabase-js Functions errors often include a Response in `context`.
+    // We try to parse it so users see the real server message.
+    try {
+      const ctx = err?.context;
+      const res: any =
+        ctx instanceof Response
+          ? ctx
+          : ctx?.response instanceof Response
+            ? ctx.response
+            : ctx;
+
+      if (res && typeof res.clone === "function" && typeof res.json === "function") {
+        const body = await res.clone().json().catch(() => null);
+        const msg = body?.error || body?.message;
+        if (typeof msg === "string" && msg.trim().length > 0) return msg;
+      }
+    } catch {
+      // ignore parse errors
+    }
+
+    const fallback = err?.message || "Something went wrong. Please try again.";
+    return typeof fallback === "string" ? fallback : "Something went wrong. Please try again.";
+  };
+
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
@@ -105,7 +130,7 @@ export default function Auth() {
 
   const sendOtp = async (targetEmail: string, type: 'login' | 'signup') => {
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
+      const { error } = await supabase.functions.invoke('send-otp', {
         body: { email: targetEmail, type }
       });
       
@@ -113,7 +138,8 @@ export default function Auth() {
       return { success: true };
     } catch (error: any) {
       console.error('Error sending OTP:', error);
-      return { success: false, error: error.message };
+      const message = await extractFunctionErrorMessage(error);
+      return { success: false, error: message };
     }
   };
 
@@ -128,7 +154,8 @@ export default function Auth() {
       return { success: true };
     } catch (error: any) {
       console.error('Error verifying OTP:', error);
-      return { success: false, error: error.message };
+      const message = await extractFunctionErrorMessage(error);
+      return { success: false, error: message };
     }
   };
 
@@ -182,7 +209,7 @@ export default function Auth() {
 
     toast({
       title: "Verification Code Sent",
-      description: "Please check your email for the 6-digit code.",
+      description: "Please check your email for the 8-character code.",
     });
     
     setLoginStep('otp');
@@ -265,7 +292,7 @@ export default function Auth() {
 
     toast({
       title: "Verification Code Sent",
-      description: "Please check your email for the 6-digit code.",
+      description: "Please check your email for the 8-character code.",
     });
     
     setSignupStep('details');
