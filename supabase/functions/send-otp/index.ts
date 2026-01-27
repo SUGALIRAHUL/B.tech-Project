@@ -7,8 +7,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Demo mode flag - set to true to show OTP on screen instead of requiring email delivery
-const DEMO_MODE = true;
+// Demo mode: Show OTP on screen for all emails EXCEPT the verified account owner
+// Real emails will be sent to the account owner's email address
+const VERIFIED_EMAIL = "rahulsugali@gmail.com";
+
+function isDemoEmail(email: string): boolean {
+  return email.toLowerCase() !== VERIFIED_EMAIL.toLowerCase();
+}
 
 interface SendOtpRequest {
   email: string;
@@ -197,8 +202,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to generate OTP");
     }
 
-    // Demo mode: return OTP directly without sending email
-    if (DEMO_MODE) {
+    // Demo mode for non-verified emails: return OTP directly without sending email
+    if (isDemoEmail(email)) {
       console.log(`[DEMO MODE] OTP for ${email}: ${otpCode}`);
       return new Response(
         JSON.stringify({ 
@@ -215,7 +220,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send OTP email using Resend API
+    // Send real email for verified email address (rahulsugali@gmail.com)
+    console.log(`Sending real OTP email to verified address: ${email}`);
     const subject = type === "login" 
       ? "Your PERSFIN Login Verification Code" 
       : "Verify Your Email - PERSFIN";
