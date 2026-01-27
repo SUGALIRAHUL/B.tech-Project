@@ -93,6 +93,7 @@ export default function Auth() {
   const [otp, setOtp] = useState("");
   const [signupOtp, setSignupOtp] = useState("");
   const [signupData, setSignupData] = useState<any>(null);
+  const [demoOtp, setDemoOtp] = useState<string | null>(null); // Demo mode OTP display
 
   const extractFunctionErrorMessage = async (err: any): Promise<string> => {
     // supabase-js Functions errors often include a Response in `context`.
@@ -130,11 +131,19 @@ export default function Auth() {
 
   const sendOtp = async (targetEmail: string, type: 'login' | 'signup') => {
     try {
-      const { error } = await supabase.functions.invoke('send-otp', {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
         body: { email: targetEmail, type }
       });
       
       if (error) throw error;
+      
+      // Check for demo mode OTP
+      if (data?.demoMode && data?.otp) {
+        setDemoOtp(data.otp);
+        return { success: true, demoMode: true, otp: data.otp };
+      }
+      
+      setDemoOtp(null);
       return { success: true };
     } catch (error: any) {
       console.error('Error sending OTP:', error);
@@ -656,6 +665,21 @@ export default function Auth() {
                       We sent an 8-character code to <strong>{email}</strong>
                     </p>
                   </div>
+
+                  {/* Demo Mode OTP Display */}
+                  {demoOtp && (
+                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
+                      <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
+                        🎓 Demo Mode - Your OTP Code:
+                      </p>
+                      <p className="text-2xl font-mono font-bold tracking-widest text-amber-900 dark:text-amber-100">
+                        {demoOtp}
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        (In production, this would be sent to your email)
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="flex justify-center">
                     <InputOTP maxLength={8} value={otp} onChange={setOtp}>
@@ -928,6 +952,21 @@ export default function Auth() {
                       Enter the 8-character code sent to <strong>{email}</strong>
                     </p>
                   </div>
+
+                  {/* Demo Mode OTP Display */}
+                  {demoOtp && (
+                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
+                      <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-1">
+                        🎓 Demo Mode - Your OTP Code:
+                      </p>
+                      <p className="text-2xl font-mono font-bold tracking-widest text-amber-900 dark:text-amber-100">
+                        {demoOtp}
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        (In production, this would be sent to your email)
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="flex justify-center">
                     <InputOTP maxLength={8} value={signupOtp} onChange={setSignupOtp}>
