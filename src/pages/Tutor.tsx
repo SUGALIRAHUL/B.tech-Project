@@ -36,7 +36,26 @@ export default function Tutor() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I'm your AI Finance Tutor. Ask me anything about personal finance, budgeting, investing, or saving strategies!",
+      content: `👋 **Welcome to PERSFIN AI - Your Personal Finance Advisor**
+
+I'm your AI-powered Certified Financial Planner with expertise in:
+
+• **Budgeting & Cash Flow** - Optimize your spending habits
+• **Investment Strategy** - SIPs, Mutual Funds, Stocks, ETFs
+• **Tax Planning** - Maximize savings under 80C, 80D, HRA
+• **Retirement Planning** - EPF, PPF, NPS, FIRE strategies
+• **Debt Management** - Smart payoff strategies
+• **Goal-Based Planning** - Personalized roadmaps
+
+I have access to your financial data, so I can provide **personalized advice** based on your actual income, expenses, investments, and goals.
+
+**Try asking me:**
+- "Analyze my current spending and suggest improvements"
+- "How much should I invest monthly to retire by 50?"
+- "Is my emergency fund adequate?"
+- "Review my investment portfolio allocation"
+
+What would you like to work on today?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -90,7 +109,26 @@ export default function Tutor() {
     setMessages([
       {
         role: "assistant",
-        content: "Hello! I'm your AI Finance Tutor. Ask me anything about personal finance, budgeting, investing, or saving strategies!",
+        content: `👋 **Welcome to PERSFIN AI - Your Personal Finance Advisor**
+
+I'm your AI-powered Certified Financial Planner with expertise in:
+
+• **Budgeting & Cash Flow** - Optimize your spending habits
+• **Investment Strategy** - SIPs, Mutual Funds, Stocks, ETFs
+• **Tax Planning** - Maximize savings under 80C, 80D, HRA
+• **Retirement Planning** - EPF, PPF, NPS, FIRE strategies
+• **Debt Management** - Smart payoff strategies
+• **Goal-Based Planning** - Personalized roadmaps
+
+I have access to your financial data, so I can provide **personalized advice** based on your actual income, expenses, investments, and goals.
+
+**Try asking me:**
+- "Analyze my current spending and suggest improvements"
+- "How much should I invest monthly to retire by 50?"
+- "Is my emergency fund adequate?"
+- "Review my investment portfolio allocation"
+
+What would you like to work on today?`,
       },
     ]);
     setCurrentConversationId(null);
