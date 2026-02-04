@@ -15,7 +15,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { CategorySelect, GOAL_TYPES } from "@/components/CategorySelect";
 
 const createGoalSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
   target_amount: z.coerce.number().int("Must be a whole number").min(1, "Target must be greater than 0").max(1_000_000_000),
   current_amount: z.coerce.number().int("Must be a whole number").min(0).max(1_000_000_000),
   deadline: z.string().optional(),
@@ -30,7 +29,7 @@ export default function Goals() {
   
   const form = useForm({
     resolver: zodResolver(createGoalSchema),
-    defaultValues: { name: "", target_amount: 0, current_amount: 0, deadline: "" },
+    defaultValues: { target_amount: 0, current_amount: 0, deadline: "" },
   });
 
   useEffect(() => { fetchGoals(); }, []);
@@ -78,7 +77,7 @@ export default function Goals() {
   const handleEdit = (goal: any) => {
     setEditingId(goal.id);
     setGoalName(goal.name);
-    form.reset({ name: goal.name, target_amount: Math.round(goal.target_amount), current_amount: Math.round(goal.current_amount), deadline: goal.deadline || "" });
+    form.reset({ target_amount: Math.round(goal.target_amount), current_amount: Math.round(goal.current_amount), deadline: goal.deadline || "" });
     setOpen(true);
   };
 
