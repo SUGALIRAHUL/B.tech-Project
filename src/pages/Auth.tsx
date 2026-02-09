@@ -14,7 +14,7 @@ import { CountrySelector } from "@/components/CountrySelector";
 import { CitySelector } from "@/components/CitySelector";
 import { PasswordInput } from "@/components/PasswordInput";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength } from "@/lib/phone-validation";
+import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength, formatPhoneNumber, getFormatPlaceholder, stripPhoneFormatting } from "@/lib/phone-validation";
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address').max(255, 'Email too long'),
@@ -844,7 +844,6 @@ export default function Auth() {
                           onSelect={(code, name) => {
                             setCountryCode(code);
                             setCountryName(name);
-                            // Trim phone number if it exceeds new country's max length
                             const max = getMaxDigits(code, name);
                             if (phoneNumber.length > max) {
                               setPhoneNumber(phoneNumber.slice(0, max));
@@ -855,21 +854,13 @@ export default function Auth() {
                         <Input
                           id="signup-mobile"
                           type="tel"
-                          inputMode="numeric"
-                          placeholder={"0".repeat(getMaxDigits(countryCode, countryName))}
-                          value={phoneNumber}
-                          maxLength={getMaxDigits(countryCode, countryName)}
+                          inputMode="tel"
+                          placeholder={getFormatPlaceholder(countryCode, countryName)}
+                          value={formatPhoneNumber(phoneNumber, countryCode, countryName)}
                           onChange={(e) => {
-                            const digits = e.target.value.replace(/[^0-9]/g, '');
+                            const digits = stripPhoneFormatting(e.target.value);
                             const max = getMaxDigits(countryCode, countryName);
                             setPhoneNumber(digits.slice(0, max));
-                          }}
-                          onKeyDown={(e) => {
-                            if ([8, 9, 27, 13, 46, 37, 39].includes(e.keyCode)) return;
-                            if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
-                            if (!/[0-9]/.test(e.key)) {
-                              e.preventDefault();
-                            }
                           }}
                           required
                         />

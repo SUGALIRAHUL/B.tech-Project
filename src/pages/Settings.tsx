@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CountryCodeSelector } from "@/components/CountryCodeSelector";
 import { CountrySelector } from "@/components/CountrySelector";
 import { CitySelector } from "@/components/CitySelector";
-import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode } from "@/lib/phone-validation";
+import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode, formatPhoneNumber, getFormatPlaceholder, stripPhoneFormatting } from "@/lib/phone-validation";
 import {
   Tooltip,
   TooltipContent,
@@ -433,13 +433,12 @@ export default function Settings() {
                           />
                           <FormControl>
                             <Input 
-                              placeholder={"0".repeat(maxDigits)}
-                              inputMode="numeric"
+                              placeholder={getFormatPlaceholder(countryCode, countryName)}
+                              inputMode="tel"
                               type="tel"
-                              maxLength={maxDigits}
-                              value={numberPart}
+                              value={formatPhoneNumber(numberPart, countryCode, countryName)}
                               onChange={(e) => {
-                                const digits = e.target.value.replace(/[^0-9]/g, '');
+                                const digits = stripPhoneFormatting(e.target.value);
                                 field.onChange(countryCode + digits.slice(0, maxDigits));
                               }}
                             />
