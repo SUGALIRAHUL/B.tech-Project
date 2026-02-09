@@ -14,6 +14,7 @@ import { CountrySelector } from "@/components/CountrySelector";
 import { CitySelector } from "@/components/CitySelector";
 import { PasswordInput } from "@/components/PasswordInput";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength } from "@/lib/phone-validation";
 
 const signupSchema = z.object({
   email: z.string().email('Invalid email address').max(255, 'Email too long'),
@@ -34,7 +35,7 @@ const signupSchema = z.object({
     .max(50, 'Display name too long'),
   mobileNumber: z.string()
     .trim()
-    .min(8, 'Phone number must be at least 8 characters')
+    .min(1, 'Phone number is required')
     .max(20, 'Phone number too long'),
   profession: z.string()
     .trim()
@@ -75,6 +76,7 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [countryCode, setCountryCode] = useState("+1");
+  const [countryName, setCountryName] = useState("United States");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [profession, setProfession] = useState("");
   const [city, setCity] = useState("");
@@ -392,6 +394,16 @@ export default function Auth() {
 
   const handleSignupDetails = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate phone number length for the selected country
+    if (!isValidPhoneLength(phoneNumber, countryCode, countryName)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: `Phone number for ${countryName} must be ${getPhoneLengthHint(countryCode, countryName)}.`,
+      });
+      return;
+    }
     
     const mobileNumber = `${countryCode}${phoneNumber}`;
     
@@ -829,25 +841,32 @@ export default function Auth() {
                       <div className="flex gap-2">
                         <CountryCodeSelector
                           value={countryCode}
-                          onSelect={setCountryCode}
+                          onSelect={(code, name) => {
+                            setCountryCode(code);
+                            setCountryName(name);
+                            // Trim phone number if it exceeds new country's max length
+                            const max = getMaxDigits(code, name);
+                            if (phoneNumber.length > max) {
+                              setPhoneNumber(phoneNumber.slice(0, max));
+                            }
+                          }}
                           disabled={loading}
                         />
                         <Input
                           id="signup-mobile"
                           type="tel"
                           inputMode="numeric"
-                          placeholder="1234567890"
+                          placeholder={"0".repeat(getMaxDigits(countryCode, countryName))}
                           value={phoneNumber}
+                          maxLength={getMaxDigits(countryCode, countryName)}
                           onChange={(e) => {
                             const digits = e.target.value.replace(/[^0-9]/g, '');
-                            setPhoneNumber(digits);
+                            const max = getMaxDigits(countryCode, countryName);
+                            setPhoneNumber(digits.slice(0, max));
                           }}
                           onKeyDown={(e) => {
-                            // Allow: backspace, delete, tab, escape, enter, arrows
                             if ([8, 9, 27, 13, 46, 37, 39].includes(e.keyCode)) return;
-                            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
                             if ((e.ctrlKey || e.metaKey) && [65, 67, 86, 88].includes(e.keyCode)) return;
-                            // Block non-numeric keys
                             if (!/[0-9]/.test(e.key)) {
                               e.preventDefault();
                             }
@@ -856,7 +875,16 @@ export default function Auth() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Select country code and enter phone number
+                        {countryName}: {getPhoneLengthHint(countryCode, countryName)}
+                        {phoneNumber.length > 0 && (
+                          <span className={
+                            isValidPhoneLength(phoneNumber, countryCode, countryName) 
+                              ? " text-green-600 dark:text-green-400" 
+                              : " text-destructive"
+                          }>
+                            {" "}({phoneNumber.length}/{getMaxDigits(countryCode, countryName)})
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="space-y-2">

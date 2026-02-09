@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CountryCodeSelector } from "@/components/CountryCodeSelector";
 import { CountrySelector } from "@/components/CountrySelector";
 import { CitySelector } from "@/components/CitySelector";
+import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode } from "@/lib/phone-validation";
 import {
   Tooltip,
   TooltipContent,
@@ -122,6 +123,23 @@ export default function Settings() {
   };
 
   const onSubmit = async (values: ProfileFormData) => {
+    // Validate phone number length if provided
+    if (values.mobile_number) {
+      const match = values.mobile_number.match(/^(\+\d{1,4})(.*)$/);
+      if (match) {
+        const [, code, digits] = match;
+        const rule = getPhoneRuleByCode(code);
+        if (rule && !isValidPhoneLength(digits, code, rule.name)) {
+          toast({
+            variant: "destructive",
+            title: "Invalid Phone Number",
+            description: `Phone number for ${rule.name} must be ${getPhoneLengthHint(code, rule.name)}.`,
+          });
+          return;
+        }
+      }
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
@@ -381,21 +399,24 @@ export default function Settings() {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+              <FormField
                   control={form.control}
                   name="mobile_number"
                   render={({ field }) => {
                     // Extract country code and number part from current value
                     const extractParts = (value: string | undefined) => {
-                      if (!value) return { countryCode: "+1", numberPart: "" };
+                      if (!value) return { countryCode: "+1", countryName: "United States", numberPart: "" };
                       const match = value.match(/^(\+\d{1,4})(.*)$/);
                       if (match) {
-                        return { countryCode: match[1], numberPart: match[2] || "" };
+                        const code = match[1];
+                        const rule = getPhoneRuleByCode(code);
+                        return { countryCode: code, countryName: rule?.name || "United States", numberPart: match[2] || "" };
                       }
-                      return { countryCode: "+1", numberPart: value };
+                      return { countryCode: "+1", countryName: "United States", numberPart: value };
                     };
                     
-                    const { countryCode, numberPart } = extractParts(field.value);
+                    const { countryCode, countryName, numberPart } = extractParts(field.value);
+                    const maxDigits = getMaxDigits(countryCode, countryName);
                     
                     return (
                       <FormItem>
@@ -403,24 +424,39 @@ export default function Settings() {
                         <div className="flex gap-2">
                           <CountryCodeSelector
                             value={field.value || "+1"}
-                            onSelect={(code) => {
-                              field.onChange(code + numberPart);
+                            onSelect={(code, name) => {
+                              const max = getMaxDigits(code, name);
+                              const trimmed = numberPart.slice(0, max);
+                              field.onChange(code + trimmed);
                             }}
                             disabled={form.formState.isSubmitting}
                           />
                           <FormControl>
                             <Input 
-                              placeholder="1234567890"
+                              placeholder={"0".repeat(maxDigits)}
                               inputMode="numeric"
                               type="tel"
+                              maxLength={maxDigits}
                               value={numberPart}
                               onChange={(e) => {
                                 const digits = e.target.value.replace(/[^0-9]/g, '');
-                                field.onChange(countryCode + digits);
+                                field.onChange(countryCode + digits.slice(0, maxDigits));
                               }}
                             />
                           </FormControl>
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          {countryName}: {getPhoneLengthHint(countryCode, countryName)}
+                          {numberPart.length > 0 && (
+                            <span className={
+                              isValidPhoneLength(numberPart, countryCode, countryName)
+                                ? " text-green-600 dark:text-green-400"
+                                : " text-destructive"
+                            }>
+                              {" "}({numberPart.length}/{maxDigits})
+                            </span>
+                          )}
+                        </p>
                         <FormMessage />
                       </FormItem>
                     );
