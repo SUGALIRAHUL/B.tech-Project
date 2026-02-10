@@ -220,36 +220,28 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Send real email for verified email address (rahulsugali@gmail.com)
-    console.log(`Sending real OTP email to verified address: ${email}`);
-    const subject = type === "login" 
-      ? "Your PERSFIN Login Verification Code" 
-      : "Verify Your Email - PERSFIN";
+    // Send real email using Brevo API
+    console.log(`Sending OTP email to: ${email}`);
+    const brevoApiKey = Deno.env.get("BREVO_API_KEY");
     
-    const message = type === "login"
-      ? `Your login verification code is: <strong>${otpCode}</strong>. This code will expire in 10 minutes.`
-      : `Your email verification code is: <strong>${otpCode}</strong>. Enter this code to complete your registration. This code will expire in 10 minutes.`;
-
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY is not configured");
+    if (!brevoApiKey) {
+      console.error("BREVO_API_KEY is not configured");
       throw new Error("Email service not configured");
     }
     
-    console.log(`Sending OTP email to ${email} using Resend API`);
+    console.log(`Sending OTP email to ${email} using Brevo API`);
     
-    const emailResponse = await fetch("https://api.resend.com/emails", {
+    const emailResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
+        "api-key": brevoApiKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "PERSFIN <onboarding@resend.dev>",
-        to: [email],
+        sender: { name: "PERSFIN", email: "noreply@persfin.com" },
+        to: [{ email }],
         subject,
-        html: `
+        htmlContent: `
           <!DOCTYPE html>
           <html>
           <head>
@@ -287,40 +279,10 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResult = await emailResponse.json();
-    console.log("Email API response:", JSON.stringify(emailResult));
+    console.log("Brevo API response:", JSON.stringify(emailResult));
 
     if (!emailResponse.ok) {
-      console.error("Resend API error:", emailResponse.status, emailResult);
-      
-      // Check for Resend testing mode error - this is the most common issue
-      if (emailResult.message?.includes("You can only send testing emails to your own email address") ||
-          (emailResult.name === "validation_error" && emailResult.statusCode === 403)) {
-        return new Response(
-          JSON.stringify({
-            code: "EMAIL_TESTING_MODE",
-            error:
-              "Email service is in testing mode. You can only send emails to the Resend account owner's address until you verify a domain and update the sender address.",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
-      }
-      
-      // Check for other validation errors
-      if (emailResult.name === "validation_error") {
-        return new Response(
-          JSON.stringify({
-            code: "EMAIL_VALIDATION_FAILED",
-            error: emailResult.message || "Email validation failed",
-          }),
-          {
-            status: 400,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-          }
-        );
-      }
+      console.error("Brevo API error:", emailResponse.status, emailResult);
       
       return new Response(
         JSON.stringify({
