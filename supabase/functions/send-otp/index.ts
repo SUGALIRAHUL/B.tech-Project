@@ -7,13 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Demo mode: Show OTP on screen for all emails EXCEPT the verified account owner
-// Real emails will be sent to the account owner's email address
-const VERIFIED_EMAIL = "rahulsugali@gmail.com";
-
-function isDemoEmail(email: string): boolean {
-  return email.toLowerCase() !== VERIFIED_EMAIL.toLowerCase();
-}
+// Demo mode disabled - all OTP emails are sent via Brevo to real users
 
 interface SendOtpRequest {
   email: string;
@@ -200,24 +194,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (insertError) {
       console.error("Error storing OTP:", insertError);
       throw new Error("Failed to generate OTP");
-    }
-
-    // Demo mode for non-verified emails: return OTP directly without sending email
-    if (isDemoEmail(email)) {
-      console.log(`[DEMO MODE] OTP for ${email}: ${otpCode}`);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "OTP generated (Demo Mode)",
-          demoMode: true,
-          otp: otpCode, // Only returned in demo mode!
-          remaining: rateLimit.remaining 
-        }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
     }
 
     // Send real email using Brevo API
