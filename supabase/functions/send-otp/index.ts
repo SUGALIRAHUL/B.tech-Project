@@ -205,6 +205,11 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Email service not configured");
     }
     
+    const subject = type === "signup" ? "Welcome to PERSFIN - Verify Your Email" : "PERSFIN - Login Verification Code";
+    const message = type === "signup"
+      ? "Welcome! Please use the following code to verify your email and complete your registration:"
+      : "Please use the following code to log in to your account:";
+    
     console.log(`Sending OTP email to ${email} using Brevo API`);
     
     const emailResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
