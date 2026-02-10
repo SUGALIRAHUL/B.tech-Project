@@ -19,7 +19,7 @@ async function sendEmail(to: string, subject: string, html: string) {
       "api-key": BREVO_API_KEY!,
     },
     body: JSON.stringify({
-      sender: { name: "PERSFIN", email: "noreply@persfin.com" },
+      sender: { name: "PERSFIN", email: "noreply.persfin@gmail.com" },
       to: [{ email: to }],
       subject,
       htmlContent: html,
