@@ -41,17 +41,17 @@ const createInvestmentSchema = z.object({
 });
 
 const investmentTypes = [
-  "Stocks",
-  "Bonds",
-  "Mutual Funds",
-  "ETFs",
-  "Real Estate",
-  "Gold",
-  "Fixed Deposits",
-  "PPF",
-  "NPS",
-  "Cryptocurrency",
-  "Other"
+  { label: "Stocks", value: "stocks" },
+  { label: "Bonds", value: "bonds" },
+  { label: "Mutual Funds", value: "mutual_funds" },
+  { label: "ETFs", value: "etfs" },
+  { label: "Real Estate", value: "real_estate" },
+  { label: "Gold", value: "gold" },
+  { label: "Fixed Deposits", value: "fixed_deposits" },
+  { label: "PPF", value: "ppf" },
+  { label: "NPS", value: "nps" },
+  { label: "Cryptocurrency", value: "crypto" },
+  { label: "Other", value: "other" },
 ];
 
 export default function Investments() {
@@ -262,8 +262,8 @@ export default function Investments() {
                           </FormControl>
                           <SelectContent className="bg-background border">
                             {investmentTypes.map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -389,7 +389,7 @@ export default function Investments() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <p className="text-sm"><span className="font-semibold">Type:</span> {inv.type}</p>
+                <p className="text-sm"><span className="font-semibold">Type:</span> {investmentTypes.find(t => t.value === inv.type)?.label || inv.type}</p>
                 <p className="text-sm"><span className="font-semibold">Current Value:</span> ₹{Math.round(Number(inv.current_value)).toLocaleString()}</p>
                 <p className="text-sm"><span className="font-semibold">Quantity:</span> {Math.round(inv.quantity)}</p>
               </div>
