@@ -147,22 +147,35 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // For login type, verify the user exists first (prevents email enumeration)
+    // Check user existence based on type
+    const { data: users } = await supabase.auth.admin.listUsers();
+    const userExists = users?.users?.some(
+      (u) => u.email?.toLowerCase() === email.toLowerCase()
+    );
+
     if (type === "login") {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const userExists = users?.users?.some(
-        (u) => u.email?.toLowerCase() === email.toLowerCase()
-      );
-      
       // Always return success to prevent email enumeration
       // But only actually send email if user exists
       if (!userExists) {
         console.log(`Login OTP requested for non-existent email: ${email}`);
-        // Return success but don't actually send email
         return new Response(
           JSON.stringify({ success: true, message: "OTP sent if email exists" }),
           {
             status: 200,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          }
+        );
+      }
+    }
+
+    if (type === "signup") {
+      // For signup, reject if user already exists
+      if (userExists) {
+        console.log(`Signup OTP requested for existing email: ${email}`);
+        return new Response(
+          JSON.stringify({ error: "An account with this email already exists. Please log in instead." }),
+          {
+            status: 409,
             headers: { "Content-Type": "application/json", ...corsHeaders },
           }
         );
