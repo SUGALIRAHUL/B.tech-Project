@@ -1,0 +1,2 @@
+ALTER TABLE public.investments DROP CONSTRAINT investments_type_check;
+ALTER TABLE public.investments ADD CONSTRAINT investments_type_check CHECK (type = ANY (ARRAY['stocks', 'bonds', 'mutual_funds', 'etfs', 'real_estate', 'gold', 'fixed_deposits', 'ppf', 'nps', 'crypto', 'other']::text[]));
