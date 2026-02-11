@@ -66,7 +66,7 @@ const loginSchema = z.object({
 });
 
 type AuthStep = 'credentials' | 'otp';
-type SignupStep = 'email-verify' | 'details' | 'complete';
+type SignupStep = 'email-verify' | 'otp-verify' | 'details';
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -94,8 +94,7 @@ export default function Auth() {
   const [signupStep, setSignupStep] = useState<SignupStep>('email-verify');
   const [otp, setOtp] = useState("");
   const [signupOtp, setSignupOtp] = useState("");
-  const [signupData, setSignupData] = useState<any>(null);
-  const [demoOtp, setDemoOtp] = useState<string | null>(null); // Demo mode OTP display
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
 
   const extractFunctionErrorMessage = async (err: any): Promise<string> => {
     // supabase-js Functions errors often include a Response in `context`.
@@ -306,7 +305,7 @@ export default function Auth() {
       description: "Please check your email for the 8-character code.",
     });
     
-    setSignupStep('details');
+    setSignupStep('otp-verify');
     setLoading(false);
   };
 
@@ -334,61 +333,12 @@ export default function Auth() {
       return;
     }
 
-    // Now complete the signup
-    const mobileNumber = `${countryCode}${phoneNumber}`;
-    
-    const { data, error } = await supabase.auth.signUp({
-      email: signupData.email,
-      password: signupData.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: {
-          full_name: signupData.fullName,
-          display_name: signupData.displayName,
-          mobile_number: mobileNumber,
-          profession: signupData.profession,
-          city: signupData.city,
-          country: signupData.country,
-          date_of_birth: signupData.dateOfBirth,
-          bio: signupData.bio,
-        },
-      },
-    });
-
-    if (error) {
-      console.error('Signup error:', error.code, error.message);
-      toast({
-        variant: "destructive",
-        title: "Account creation failed",
-        description: error.message || "Unable to create account. Please try again.",
-      });
-      setLoading(false);
-      return;
-    }
-
-    // After successful signup, mark email as confirmed via edge function
-    try {
-      const { error: confirmError } = await supabase.functions.invoke('confirm-email', {
-        body: { email: signupData.email }
-      });
-      
-      if (confirmError) {
-        console.error('Error confirming email:', confirmError);
-        // Don't fail the signup, just log the error
-      }
-    } catch (confirmErr) {
-      console.error('Error calling confirm-email:', confirmErr);
-    }
-
     toast({
-      title: "Account created!",
-      description: "Welcome to PERSFIN. You can now log in.",
+      title: "Email Verified!",
+      description: "Now complete your profile to create your account.",
     });
-    setSignupStep('email-verify');
-    setEmail("");
-    setPassword("");
-    setSignupOtp("");
 
+    setSignupStep('details');
     setLoading(false);
   };
 
@@ -429,20 +379,61 @@ export default function Auth() {
       return;
     }
 
-    // Store signup data for later
-    setSignupData({
+    setLoading(true);
+
+    // Directly create account since OTP is already verified
+    const { data, error } = await supabase.auth.signUp({
       email: validation.data.email,
       password: validation.data.password,
-      fullName: validation.data.fullName,
-      displayName: validation.data.displayName,
-      profession: validation.data.profession,
-      city: validation.data.city,
-      country: validation.data.country,
-      dateOfBirth: validation.data.dateOfBirth,
-      bio: validation.data.bio,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          full_name: validation.data.fullName,
+          display_name: validation.data.displayName,
+          mobile_number: mobileNumber,
+          profession: validation.data.profession,
+          city: validation.data.city,
+          country: validation.data.country,
+          date_of_birth: validation.data.dateOfBirth,
+          bio: validation.data.bio,
+        },
+      },
     });
-    
-    setSignupStep('complete');
+
+    if (error) {
+      console.error('Signup error:', error.code, error.message);
+      toast({
+        variant: "destructive",
+        title: "Account creation failed",
+        description: error.message || "Unable to create account. Please try again.",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // After successful signup, mark email as confirmed via edge function
+    try {
+      const { error: confirmError } = await supabase.functions.invoke('confirm-email', {
+        body: { email: validation.data.email }
+      });
+      
+      if (confirmError) {
+        console.error('Error confirming email:', confirmError);
+      }
+    } catch (confirmErr) {
+      console.error('Error calling confirm-email:', confirmErr);
+    }
+
+    toast({
+      title: "Account created!",
+      description: "Welcome to PERSFIN. You can now log in.",
+    });
+    setSignupStep('email-verify');
+    setEmail("");
+    setPassword("");
+    setSignupOtp("");
+
+    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -783,7 +774,7 @@ export default function Auth() {
               {signupStep === 'details' && (
                 <form onSubmit={handleSignupDetails} className="space-y-4">
                   <div className="text-center py-2">
-                    <h3 className="text-lg font-semibold mb-1">Step 2: Complete Your Profile</h3>
+                    <h3 className="text-lg font-semibold mb-1">Step 3: Complete Your Profile</h3>
                     <p className="text-muted-foreground text-sm">
                       Fill in your details to create your account
                     </p>
@@ -865,18 +856,6 @@ export default function Auth() {
                           required
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {countryName}: {getPhoneLengthHint(countryCode, countryName)}
-                        {phoneNumber.length > 0 && (
-                          <span className={
-                            isValidPhoneLength(phoneNumber, countryCode, countryName) 
-                              ? " text-green-600 dark:text-green-400" 
-                              : " text-destructive"
-                          }>
-                            {" "}({phoneNumber.length}/{getMaxDigits(countryCode, countryName)})
-                          </span>
-                        )}
-                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-dob">
@@ -949,24 +928,31 @@ export default function Auth() {
                       type="button" 
                       variant="outline" 
                       className="flex-1"
-                      onClick={() => setSignupStep('email-verify')}
+                      onClick={() => setSignupStep('otp-verify')}
                     >
                       Back
                     </Button>
                     <Button type="submit" className="flex-1" disabled={loading}>
-                      Continue
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating Account...
+                        </>
+                      ) : (
+                        "Create Account"
+                      )}
                     </Button>
                   </div>
                 </form>
               )}
 
-              {signupStep === 'complete' && (
+              {signupStep === 'otp-verify' && (
                 <div className="space-y-6 py-4">
                   <div className="text-center space-y-2">
                     <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                       <Mail className="h-8 w-8 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold">Step 3: Verify Email Code</h3>
+                    <h3 className="text-xl font-semibold">Step 2: Verify Email Code</h3>
                     <p className="text-muted-foreground text-sm">
                       Enter the 8-character code sent to <strong>{email}</strong>
                     </p>
@@ -1010,10 +996,10 @@ export default function Auth() {
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating Account...
+                        Verifying...
                       </>
                     ) : (
-                      "Verify & Create Account"
+                      "Verify Email"
                     )}
                   </Button>
 
@@ -1029,7 +1015,7 @@ export default function Auth() {
                     <Button 
                       variant="link" 
                       className="p-0 h-auto"
-                      onClick={() => setSignupStep('details')}
+                      onClick={() => { setSignupStep('email-verify'); setSignupOtp(''); }}
                     >
                       Back
                     </Button>
