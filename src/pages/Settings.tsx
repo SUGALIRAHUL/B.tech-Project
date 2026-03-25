@@ -408,10 +408,9 @@ export default function Settings() {
                       if (!value || !value.startsWith("+")) return { countryCode: "+1", countryName: "United States", numberPart: "" };
                       
                       // Try matching against known country codes, longest first
-                      const { countryPhoneRules } = require("@/lib/phone-validation");
-                      const matchingRules = (countryPhoneRules as any[])
-                        .filter((r: any) => value.startsWith(r.code))
-                        .sort((a: any, b: any) => b.code.length - a.code.length);
+                      const matchingRules = countryPhoneRules
+                        .filter(r => value.startsWith(r.code))
+                        .sort((a, b) => b.code.length - a.code.length);
                       
                       if (matchingRules.length > 0) {
                         const rule = matchingRules[0];
