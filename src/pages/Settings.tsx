@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CountryCodeSelector } from "@/components/CountryCodeSelector";
 import { CountrySelector } from "@/components/CountrySelector";
 import { CitySelector } from "@/components/CitySelector";
-import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode, formatPhoneNumber, getFormatPlaceholder, stripPhoneFormatting } from "@/lib/phone-validation";
+import { countryPhoneRules, getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode, formatPhoneNumber, getFormatPlaceholder, stripPhoneFormatting } from "@/lib/phone-validation";
 import {
   Tooltip,
   TooltipContent,
@@ -125,15 +125,18 @@ export default function Settings() {
   const onSubmit = async (values: ProfileFormData) => {
     // Validate phone number length if provided
     if (values.mobile_number) {
-      const match = values.mobile_number.match(/^(\+\d{1,4})(.*)$/);
-      if (match) {
-        const [, code, digits] = match;
-        const rule = getPhoneRuleByCode(code);
-        if (rule && !isValidPhoneLength(digits, code, rule.name)) {
+      const matchingRules = countryPhoneRules
+        .filter(r => values.mobile_number!.startsWith(r.code))
+        .sort((a, b) => b.code.length - a.code.length);
+      
+      if (matchingRules.length > 0) {
+        const rule = matchingRules[0];
+        const digits = values.mobile_number!.slice(rule.code.length);
+        if (!isValidPhoneLength(digits, rule.code, rule.name)) {
           toast({
             variant: "destructive",
             title: "Invalid Phone Number",
-            description: `Phone number for ${rule.name} must be ${getPhoneLengthHint(code, rule.name)}.`,
+            description: `Phone number for ${rule.name} must be ${getPhoneLengthHint(rule.code, rule.name)}.`,
           });
           return;
         }
@@ -403,14 +406,18 @@ export default function Settings() {
                   control={form.control}
                   name="mobile_number"
                   render={({ field }) => {
-                    // Extract country code and number part from current value
+                    // Extract country code and number part by matching against known codes
                     const extractParts = (value: string | undefined) => {
-                      if (!value) return { countryCode: "+1", countryName: "United States", numberPart: "" };
-                      const match = value.match(/^(\+\d{1,4})(.*)$/);
-                      if (match) {
-                        const code = match[1];
-                        const rule = getPhoneRuleByCode(code);
-                        return { countryCode: code, countryName: rule?.name || "United States", numberPart: match[2] || "" };
+                      if (!value || !value.startsWith("+")) return { countryCode: "+1", countryName: "United States", numberPart: "" };
+                      
+                      // Try matching against known country codes, longest first
+                      const matchingRules = countryPhoneRules
+                        .filter(r => value.startsWith(r.code))
+                        .sort((a, b) => b.code.length - a.code.length);
+                      
+                      if (matchingRules.length > 0) {
+                        const rule = matchingRules[0];
+                        return { countryCode: rule.code, countryName: rule.name, numberPart: value.slice(rule.code.length) };
                       }
                       return { countryCode: "+1", countryName: "United States", numberPart: value };
                     };
@@ -444,18 +451,6 @@ export default function Settings() {
                             />
                           </FormControl>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {countryName}: {getPhoneLengthHint(countryCode, countryName)}
-                          {numberPart.length > 0 && (
-                            <span className={
-                              isValidPhoneLength(numberPart, countryCode, countryName)
-                                ? " text-green-600 dark:text-green-400"
-                                : " text-destructive"
-                            }>
-                              {" "}({numberPart.length}/{maxDigits})
-                            </span>
-                          )}
-                        </p>
                         <FormMessage />
                       </FormItem>
                     );
