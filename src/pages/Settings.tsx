@@ -125,15 +125,18 @@ export default function Settings() {
   const onSubmit = async (values: ProfileFormData) => {
     // Validate phone number length if provided
     if (values.mobile_number) {
-      const match = values.mobile_number.match(/^(\+\d{1,4})(.*)$/);
-      if (match) {
-        const [, code, digits] = match;
-        const rule = getPhoneRuleByCode(code);
-        if (rule && !isValidPhoneLength(digits, code, rule.name)) {
+      const matchingRules = countryPhoneRules
+        .filter(r => values.mobile_number!.startsWith(r.code))
+        .sort((a, b) => b.code.length - a.code.length);
+      
+      if (matchingRules.length > 0) {
+        const rule = matchingRules[0];
+        const digits = values.mobile_number!.slice(rule.code.length);
+        if (!isValidPhoneLength(digits, rule.code, rule.name)) {
           toast({
             variant: "destructive",
             title: "Invalid Phone Number",
-            description: `Phone number for ${rule.name} must be ${getPhoneLengthHint(code, rule.name)}.`,
+            description: `Phone number for ${rule.name} must be ${getPhoneLengthHint(rule.code, rule.name)}.`,
           });
           return;
         }
