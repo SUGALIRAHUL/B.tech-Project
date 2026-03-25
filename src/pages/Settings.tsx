@@ -403,14 +403,19 @@ export default function Settings() {
                   control={form.control}
                   name="mobile_number"
                   render={({ field }) => {
-                    // Extract country code and number part from current value
+                    // Extract country code and number part by matching against known codes
                     const extractParts = (value: string | undefined) => {
-                      if (!value) return { countryCode: "+1", countryName: "United States", numberPart: "" };
-                      const match = value.match(/^(\+\d{1,4})(.*)$/);
-                      if (match) {
-                        const code = match[1];
-                        const rule = getPhoneRuleByCode(code);
-                        return { countryCode: code, countryName: rule?.name || "United States", numberPart: match[2] || "" };
+                      if (!value || !value.startsWith("+")) return { countryCode: "+1", countryName: "United States", numberPart: "" };
+                      
+                      // Try matching against known country codes, longest first
+                      const { countryPhoneRules } = require("@/lib/phone-validation");
+                      const matchingRules = (countryPhoneRules as any[])
+                        .filter((r: any) => value.startsWith(r.code))
+                        .sort((a: any, b: any) => b.code.length - a.code.length);
+                      
+                      if (matchingRules.length > 0) {
+                        const rule = matchingRules[0];
+                        return { countryCode: rule.code, countryName: rule.name, numberPart: value.slice(rule.code.length) };
                       }
                       return { countryCode: "+1", countryName: "United States", numberPart: value };
                     };
