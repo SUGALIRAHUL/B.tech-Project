@@ -451,18 +451,6 @@ export default function Settings() {
                             />
                           </FormControl>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {countryName}: {getPhoneLengthHint(countryCode, countryName)}
-                          {numberPart.length > 0 && (
-                            <span className={
-                              isValidPhoneLength(numberPart, countryCode, countryName)
-                                ? " text-green-600 dark:text-green-400"
-                                : " text-destructive"
-                            }>
-                              {" "}({numberPart.length}/{maxDigits})
-                            </span>
-                          )}
-                        </p>
                         <FormMessage />
                       </FormItem>
                     );
