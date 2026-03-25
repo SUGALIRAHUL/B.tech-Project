@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CountryCodeSelector } from "@/components/CountryCodeSelector";
 import { CountrySelector } from "@/components/CountrySelector";
 import { CitySelector } from "@/components/CitySelector";
-import { getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode, formatPhoneNumber, getFormatPlaceholder, stripPhoneFormatting } from "@/lib/phone-validation";
+import { countryPhoneRules, getMaxDigits, getPhoneLengthHint, isValidPhoneLength, getPhoneRuleByCode, formatPhoneNumber, getFormatPlaceholder, stripPhoneFormatting } from "@/lib/phone-validation";
 import {
   Tooltip,
   TooltipContent,
